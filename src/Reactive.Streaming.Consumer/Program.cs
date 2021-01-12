@@ -4,7 +4,7 @@ using Microsoft.Extensions.Hosting;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
+using Reactive.Streaming.Consumer.Subscribers;
 
 namespace Reactive.Streaming.Consumer
 {
@@ -32,8 +32,29 @@ namespace Reactive.Streaming.Consumer
                         return new ConsumerBuilder<Null,string>(conf).Build();
                     });
                     services.AddSingleton<IBookingConsumer, BookingConsumer>();
-                    services.AddSingleton<IBookingStream, BookingStream>();
+                    services.AddSubscribers();
+                    
+                    
                     services.AddHostedService<Worker>();
                 });
+    }
+    public static class ServiceCollectionExtensions {
+
+        public static void AddSubscribers(this IServiceCollection services){
+            
+            services.AddSingleton<ISubscriber, Subscriber1>();
+            services.AddSingleton<ISubscriber, Subscriber2>();
+
+            services.AddSingleton<IBookingStream>(c=>{
+                        var subscribers = c.GetRequiredService<IEnumerable<ISubscriber>>();
+                        var bStream = new BookingStream();
+                        foreach(var sub in subscribers){
+                            bStream.Subscribe(sub.SubscriberName, async (m)=>await sub.DoSomethingAsync(m));
+                        }
+                        return bStream;
+                    });
+            
+        }
+
     }
 }

@@ -19,11 +19,20 @@ namespace Reactive.Streaming.Consumer
             _logger = logger;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public override void Dispose()
         {
-            _bookingStream.Subscribe("Subscriber1", (m) => Console.WriteLine($"Subscriber1 Message: {m.Message}"));
-            _bookingStream.Subscribe("Subscriber12", (m) => Console.WriteLine($"Subscriber2 Message: {m.Message}"));
-            _bookingConsumer.Listen(stoppingToken);
+            _bookingConsumer?.Dispose();
+            _bookingStream?.Dispose();
+            base.Dispose();
         }
+
+
+        protected override  Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            _bookingConsumer.Listen(stoppingToken);
+
+            return Task.CompletedTask;
+        }
+        
     }
 }
